@@ -1,0 +1,139 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg12
+    container_name: timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: my_database
+      POSTGRES_USER: your_user
+      POSTGRES_PASSWORD: your_password
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U your_user -d my_database"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  db:
+    build:
+      context: .
+      dockerfile: ./apps/db/Dockerfile
+    container_name: db
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./apps/db:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "your_user", "-d", "my_database"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  api:
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    container_name: api
+    ports:
+      - "3005:3000"
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      redis:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+  ws:
+    build:
+      context: .
+      dockerfile: ./apps/ws/Dockerfile
+    container_name: ws
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./apps/ws:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    depends_on:
+      redis:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+
+  engine:
+    build:
+      context: .
+      dockerfile: ./apps/engine/Dockerfile
+    container_name: engine
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./apps/engine:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mm:
+    build:
+      context: .
+      dockerfile: ./apps/mm/Dockerfile
+    container_name: mm
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./apps/mm:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    depends_on:
+      engine:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  timescale-data:

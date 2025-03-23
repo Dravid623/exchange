@@ -1,0 +1,1 @@
+{"root":["./src/RedisManager.ts","./src/index.ts","./src/trade/Orderbook.ts","./src/trade/engine.ts","./src/types/api.ts","./src/types/dbMessage.ts","./src/types/fromApi.ts","./src/types/index.ts","./src/types/ws.ts"],"version":"5.8.2"}
