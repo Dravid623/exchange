@@ -40,7 +40,6 @@ export type DbMessage =
     volume?: string; 
     quoteVolume?: string;
     open?: string;
-    id: number;
     startTime: string;
     endTime: string;
   }

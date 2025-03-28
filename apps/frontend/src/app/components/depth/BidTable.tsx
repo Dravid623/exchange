@@ -1,6 +1,7 @@
 export const BidTable = ({ bids }: { bids: [string, string][] }) => {
   let currentTotal = 0;
-  const relevantBids = bids.slice(0, 15);
+  const reverseSortBids = bids.slice(0, 15);
+  const relevantBids = reverseSortBids.sort((a, b) => Number(b[0]) - Number(a[0]));
   const bidsWithTotal: [string, string, number][] = relevantBids.map(
     ([price, quantity]) => [
       price,

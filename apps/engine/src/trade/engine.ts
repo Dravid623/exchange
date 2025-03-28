@@ -26,10 +26,14 @@ export class Engine {
 
   constructor() {
     let snapshot = null
+    let klineSnapshot = null;
     try {
       if(process.env.WITH_SNAPSHOT){
         snapshot = fs.readFileSync("./snapshot.json");
       }
+      // if(process.env.WITH_SNAPSHOT){
+      //   klineSnapshot = fs.readFileSync("./klineSnapshot.json");
+      // }
     } catch (e) {
       console.log("No snapshot found")
     }
@@ -42,9 +46,15 @@ export class Engine {
     this.orderbooks = [new Orderbook(`TATA`, [], [], 0, 0)];
     this.setBaseBalances();
     }
+    // if(klineSnapshot){
+
+    // }
     setInterval(() => {
-      this.saveSnapshot()
+      this.saveSnapshot() 
     }, 3*1000);
+    setInterval(() => {
+      this.saveKlineSnapshot()
+    }, 14.8*1000);
   }
   saveSnapshot() {
     const snapshotSnapshot = {
@@ -53,6 +63,11 @@ export class Engine {
     }
     this.setOrderbookStatusInDb(snapshotSnapshot)
     fs.writeFileSync("./snapshot.json", JSON.stringify(snapshotSnapshot))
+  }
+  saveKlineSnapshot() {
+    const klinesnapshotSnapshot = this.orderbooks.map(o => o.getKline());
+    fs.writeFileSync("./klineSnapshot.json", JSON.stringify(klinesnapshotSnapshot))
+    this.setKlineToDb(klinesnapshotSnapshot[0]??{}as Kline)
   }
   sendKlineTodb(){
 
@@ -108,7 +123,7 @@ export class Engine {
             cancelOrderbook.getAsks().find((o) => o.orderId === orderId) ||
             cancelOrderbook.getBids().find((o) => o.orderId === orderId);
           if (!order) {
-            throw new Error(`No order found in`);
+            return;
           }
           if (order.side === "buy") {
             const price = cancelOrderbook.cancelBid(order);
@@ -211,7 +226,6 @@ export class Engine {
     const { executedQty, fills} = orderbook.addOrder(order);
     const kline: Kline = orderbook.getKline()
     const todaysChange = orderbook.getTodaysChange()
-    
     //TODO: update on DB, publish on ws, updateBalance, publishDepth
     this.updateBalance(userId,baseAsset,quoteAsset,side,fills,executedQty);
     this.createDbTrades(fills,market,userId);
@@ -538,8 +552,6 @@ export class Engine {
     Redis.pushMessage({
       type: "ADD_KLINE",
       data: kline
-    })
+    });
   }
-  public getKlineFromDb(){}
-  public getDepthFromDb(){}
 }

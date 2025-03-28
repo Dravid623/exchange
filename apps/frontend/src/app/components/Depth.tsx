@@ -61,9 +61,8 @@ export function Depth({ market }: { market: string }) {
     });
 
     exchangeAPI.getDepth(market).then((d) => {
-      const reversedBids = d.bids.reverse();
-      setBids(reversedBids);
-      bidsRef.current = reversedBids;
+      setBids(d.bids);
+      bidsRef.current = d.bids;
 
       setAsks(d.asks);
       asksRef.current = d.asks;
@@ -94,10 +93,10 @@ export function Depth({ market }: { market: string }) {
 
 function TableHeader() {
   return (
-    <div className="flex justify-between px-4 py-2 text-sm font-semibold bg-gray-900 rounded-md shadow-md">
-      <div className="text-gray-300 w-1/3 text-left">Price</div>
-      <div className="text-gray-400 w-1/3 text-center">Size</div>
-      <div className="text-gray-400 w-1/3 text-right">Total</div>
+    <div className="flex justify-between px-4 py-2 text-sm font-semibold bg-gray-900">
+      <div className="text-gray-100 w-1/3 text-left">Price</div>
+      <div className="text-gray-100 w-1/3 text-center">Size</div>
+      <div className="text-gray-100 w-1/3 text-right">Total</div>
     </div>
   );
   

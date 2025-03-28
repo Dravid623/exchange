@@ -2,6 +2,7 @@ services:
   timescaledb:
     image: timescale/timescaledb:latest-pg12
     container_name: timescaledb
+    restart: always
     ports:
       - "5432:5432"
     environment:
@@ -20,6 +21,7 @@ services:
   redis:
     image: redis:latest
     container_name: redis
+    restart: always
     ports:
       - "6379:6379"
     healthcheck:
@@ -33,21 +35,23 @@ services:
       context: .
       dockerfile: ./apps/db/Dockerfile
     container_name: db
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    ports:
-      - "3002:3002"
     volumes:
       - ./apps/db:/app
       - /app/node_modules
+    depends_on:
+      - timescaledb
+      - redis
     environment:
-      - NODE_ENV=development
+      DATABASE_HOST: timescaledb
+      DATABASE_PORT: 5432
+      DATABASE_USER: your_user
+      DATABASE_PASSWORD: your_password
+      DATABASE_NAME: my_database
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     command: npm run dev
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "your_user", "-d", "my_database"]
+      test: ["CMD-SHELL", "pg_isready -h timescaledb -p 5432 -U your_user -d my_database"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -88,13 +92,13 @@ services:
     volumes:
       - ./apps/ws:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
     command: npm run dev
     depends_on:
       redis:
         condition: service_healthy
       timescaledb:
+        condition: service_healthy
+      api:
         condition: service_healthy
 
   engine:
@@ -102,38 +106,23 @@ services:
       context: .
       dockerfile: ./apps/engine/Dockerfile
     container_name: engine
-    ports:
-      - "3004:3004"
     volumes:
       - ./apps/engine:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
     command: npm run dev
     depends_on:
       api:
         condition: service_healthy
       redis:
         condition: service_healthy
-
-  mm:
-    build:
-      context: .
-      dockerfile: ./apps/mm/Dockerfile
-    container_name: mm
-    ports:
-      - "3003:3003"
-    volumes:
-      - ./apps/mm:/app
-      - /app/node_modules
     environment:
-      - NODE_ENV=development
-    command: npm run dev
-    depends_on:
-      engine:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "redis", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 volumes:
   timescale-data:

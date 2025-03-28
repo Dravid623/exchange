@@ -26,7 +26,6 @@ export interface Kline {
   quoteVolume?: string;
   startTime: string; 
   endTime: string; 
-  id: number;
 }
 
 export interface TodaysChange{
@@ -63,7 +62,7 @@ export class Orderbook {
     this.baseAsset = baseAsset;
     this.lastTradeId = lastTradeId || 0;
     this.currentPrice = currentPrice || 0;
-    this.kline = {symbol:this.ticker(),open: String(currentPrice),high: String(currentPrice),low: "1004",close: String(currentPrice),startTime: (new Date().getTime()).toString(),endTime: (new Date().getTime()).toString(),id:new Date().getTime(),volume:"0",quoteVolume:"0" };
+    this.kline = {symbol:this.ticker(),open: "1004",high: String(currentPrice),low: "1004",close: String(currentPrice),startTime: (new Date().getTime()).toString(),endTime: (new Date().getTime()).toString(),volume:"0",quoteVolume:"0" };
     this.todaysChange = {lastDayPrice:this.currentPrice, price:this.currentPrice,low:this.currentPrice,high:this.currentPrice,volume:0}
     this.startInterval()
   }
@@ -74,9 +73,8 @@ export class Orderbook {
          this.kline.high = this.kline.close,
          this.kline.low = this.kline.close,
          this.kline.startTime = (new Date().getTime()).toString(),
-         this.kline.endTime = (new Date().getTime()).toString(),
-         this.kline.id = new Date().getTime()
-    }, 15*60*1000); // 15 seconds
+         this.kline.endTime = (new Date().getTime()).toString()
+    }, 15*1000); // 15 seconds
   }
   ticker() {
     return `${this.baseAsset}_${this.quoteAsset}`;

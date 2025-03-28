@@ -17,7 +17,6 @@ orderRouter.get("/open", async (req, res) => {
 
 orderRouter.post("/", async (req, res) => {
   const { market, price, quantity, side, userId } = req.body;
-  console.log({ market, price, quantity, side, userId });
   // TODO: make a type of the response object. it is union now;
   const response = await RedisManager.getInstance().sendAndAwait({
     type: CREATE_ORDER,

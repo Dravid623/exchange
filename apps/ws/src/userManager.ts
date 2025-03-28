@@ -17,7 +17,6 @@ export class UserManager {
     const user: User = new User(id, ws);
     this.users.set(id, user);
     this.registerOnClose(ws, id);
-    console.log(`User connected and id `)
     return user;
   }
   private registerOnClose(ws: WebSocket, id: string) {

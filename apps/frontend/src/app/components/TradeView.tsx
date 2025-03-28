@@ -17,37 +17,49 @@ export function TradeView({ market }: { market: string }) {
   useEffect(() => {
     async function init() {
       try {
-        const fetchedData = await new ExchangeAPI().getKlines(
+        const rawData = await new ExchangeAPI().getKlines(
           market,
           "1h",
-          Math.floor(new Date().getTime() - 1000 * 60 * 60 * 24 * 7) / 1000, // 7 days ago
-          Math.floor(new Date().getTime() / 1000), // Current time
+          Math.floor((Date.now() - 1000 * 60 * 60 * 24 * 7) / 1000), // 7 days ago (seconds)
+          Math.floor(Date.now() / 1000) // Current time (seconds)
         );
-
-        klineDataRef.current = fetchedData;
-        setKlineData(fetchedData);
-
+        
+        // Convert and clean the data
+        const formattedData = rawData
+          .map((x) => ({
+            open: parseFloat(x.open),
+            high: parseFloat(x.high),
+            low: parseFloat(x.low),
+            close: parseFloat(x.close),
+            time: Number(x.starttime) // Convert ms to seconds
+          }))
+          .sort((a, b) => a.time - b.time); // Sort by time
+        
+        // Remove duplicates (if any)
+        const uniqueData = formattedData.filter(
+          (item, index, self) => index === self.findIndex((t) => t.time === item.time)
+        );
+        
+        // Save the data
+        //@ts-ignore
+        klineDataRef.current = uniqueData;
+        setKlineData(uniqueData);
+        
         if (chartRef.current) {
-          // Destroy existing chart before creating a new one
           chartManagerRef.current?.destroy();
-
+        
           const chartManager = new ChartManager(
             chartRef.current,
-            fetchedData.map((x) => ({
-              open: x.open ? parseFloat(x.open) : undefined,
-              high: x.high ? parseFloat(x.high) : undefined,
-              low: x.low ? parseFloat(x.low) : undefined,
-              close: x.close ? parseFloat(x.close) : undefined,
-              time: x.startTime ? Math.floor(parseInt(x.startTime) / 1000) : undefined,
-            })),
+            uniqueData,
             {
               background: "#0e0f14",
               color: "white",
             }
           );
-
+        
           chartManagerRef.current = chartManager;
         }
+        
       } catch (e) {
         console.error("Failed to fetch klines:", e);
       }
@@ -74,7 +86,7 @@ export function TradeView({ market }: { market: string }) {
           updatedKline.push(data);
         }
 
-        updatedKline.sort((a, b) => Number(a.startTime) - Number(b.startTime));
+        // updatedKline.sort((a, b) => Number(a.startTime) - Number(b.startTime));
 
         klineDataRef.current = updatedKline;
         setKlineData(updatedKline);
@@ -119,8 +131,6 @@ export function TradeView({ market }: { market: string }) {
   }, [market]);
 
   return (
-    <Card>
-<div ref={chartRef} style={{ height: 520, width: "100%", marginTop: 4 }} />
-    </Card>
+        <div ref={chartRef} style={{ height: 520, width: "100%" }} />
   )
 }

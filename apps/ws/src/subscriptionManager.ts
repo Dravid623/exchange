@@ -1,11 +1,13 @@
 import { createClient, RedisClientType } from "redis";
 import { UserManager } from "./userManager";
+import { main } from "./marketMaker";
 
 export class SubscriptionManager {
   private static instance: SubscriptionManager;
   private subscriptions: Map<string, string[]> = new Map();
   private reverseSubscriptions: Map<string, string[]> = new Map();
   private redisClient: RedisClientType;
+  private intervalId: ReturnType<typeof setInterval> | undefined;
 
   private constructor() {
     this.redisClient = createClient({
@@ -21,7 +23,6 @@ export class SubscriptionManager {
     return this.instance;
   }
   public subscribe(userId: string, subscription: string) {
-    console.log(`user id ${userId} and subscription is ${subscription}`)
     if (this.subscriptions.get(userId)?.includes(subscription)) {
       return;
     }
@@ -34,6 +35,9 @@ export class SubscriptionManager {
       (this.reverseSubscriptions?.get(subscription) || []).concat(userId),
     );
     if (this.reverseSubscriptions?.get(subscription)?.length === 1) {
+      this.intervalId = setInterval(() => {
+        main()
+      }, 2000);
       this.redisClient.subscribe(subscription, (message, channel)=>this.redisCallbackHandler(message,channel));
     }
   }
@@ -65,6 +69,7 @@ export class SubscriptionManager {
       if (this.reverseSubscriptions.get(subscription)?.length === 0) {
         this.reverseSubscriptions.delete(subscription);
         this.redisClient.unsubscribe(subscription);
+        clearInterval(this.intervalId)
       }
     }
   }

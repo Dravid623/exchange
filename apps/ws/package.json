@@ -13,8 +13,10 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@types/axios": "^0.9.36",
     "@types/redis": "^4.0.10",
     "@types/ws": "^8.5.14",
+    "axios": "^1.8.4",
     "redis": "^4.7.0",
     "ws": "^8.0.0"
   }

@@ -1,7 +1,8 @@
 export const AskTable = ({ asks }: { asks: [string, string][] }) => {
   let currentTotal = 0;
-  const relevantAsks = asks.slice(0, 15);
-  const asksWithTotal: [string, string, number][] = relevantAsks.map(
+  const sortAsks = asks.slice(0, 15);
+  const relevantAsks = sortAsks.sort((a, b) => Number(a[0]) - Number(b[0]));
+  const asksWithTotalWithoutReverse: [string, string, number][] = relevantAsks.map(
     ([price, quantity]) => [
       price,
       quantity,
@@ -12,7 +13,7 @@ export const AskTable = ({ asks }: { asks: [string, string][] }) => {
     (acc, [_, quantity]) => acc + Number(quantity),
     0,
   );
-
+const asksWithTotal = asksWithTotalWithoutReverse.sort((a, b) => Number(b[0]) - Number(a[0]))
   return (
     <div>
       {asksWithTotal?.filter(([_, quantity]) => parseFloat(quantity) > 0)
