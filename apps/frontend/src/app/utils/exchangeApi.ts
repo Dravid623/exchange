@@ -1,15 +1,12 @@
 import axios from "axios";
-import { Depth, Kline, Ticker, Trade } from "./types";
-import { useId } from "react";
+import { DepthType, Kline, Ticker, Trade } from "./types";
+import dotenv from "dotenv";
+dotenv.config();
 
-// const BASE_URL = "http://localhost:3000/api/v1";
-// const BASE_URL =  "http://api:3000/api/v1"
-const BASE_URL = `http://${window.location.hostname}:3005/api/v1`;
-
-
+const BASE_URL =  process.env.NEXT_PUBLIC_BASE_URL;
 export class ExchangeAPI {
-  private baseUrl: string;
-  constructor(baseUrl: string = BASE_URL) {
+  private baseUrl: string | undefined;
+  constructor(baseUrl: string | undefined = BASE_URL) {
     this.baseUrl = baseUrl;
   }
 
@@ -24,16 +21,19 @@ export class ExchangeAPI {
 
   public async getTickers(): Promise<Ticker[]> {
     const response = await axios.get(`${this.baseUrl}/tickers`);
+    //@ts-expect-error: Type 'unknown' is not assignable to type 'Ticker[]'.
     return response.data;
   }
 
-  public async getDepth(market: string): Promise<Depth> {
+  public async getDepth(market: string): Promise<DepthType> {
     const response = await axios.get(`${this.baseUrl}/depth?symbol=${market}`);
+    //@ts-expect-error : Type 'unknown' is not assignable to type 'DepthType'.
     return response.data;
   }
 
   public async getTrades(market: string): Promise<Trade[]> {
     const response = await axios.get(`${this.baseUrl}/trades?symbol=${market}`);
+    //@ts-expect-error : Type 'unknown' is not assignable to type 'Trade[]'.
     return response.data;
   }
 
@@ -46,6 +46,7 @@ export class ExchangeAPI {
     const response = await axios.get(
       `${this.baseUrl}/klines?symbol=${market}&interval=${interval}&startTime=${startTime}&endTime=${endTime}`,
     );
+    //@ts-expect-error : Type 'unknown' is not assignable to type 'Kline[]'.
     const data: Kline[] = response.data;
     return data.sort((x, y) => (Number(x.startTime) < Number(y.startTime) ? -1 : 1));
   }

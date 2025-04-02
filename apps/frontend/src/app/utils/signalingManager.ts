@@ -1,17 +1,15 @@
-import { Depth, Kline, Ticker } from "./types";
+import { Callback, DepthType, Kline, WebSocketMessage } from "./types";
+import dotenv from "dotenv";
+dotenv.config();
 
-// export const BASE_URL = "ws://localhost:3001";
-// export const BASE_URL = "ws://ws:3001";
-export const BASE_URL = `ws://${window.location.hostname}:3001`;
-
-
+const BASE_URL =  process.env.NEXT_PUBLIC_BASE_URL_WS || "";
 export class SignalingManager {
   private ws: WebSocket;
   private static instance: SignalingManager;
   private id: number;
   private initialized: boolean = false;
-  private callbacks: any = {};
-  private bufferedMessage: any = {};
+  private callbacks:  Record<string, { id: string; callback:Callback[]}[]>= {};
+  private bufferedMessage:WebSocketMessage[] = [];
 
   private constructor() {
     this.ws = new WebSocket(BASE_URL);
@@ -29,7 +27,7 @@ export class SignalingManager {
   private init() {
     this.ws.onopen = ()=>{
         this.initialized=true;
-        this.bufferedMessage.forEach((m: any) => {
+        Object.values(this.bufferedMessage).forEach((m:WebSocketMessage) => {
             this.ws.send(JSON.stringify(m));
         });
         this.bufferedMessage=[];
@@ -38,7 +36,8 @@ export class SignalingManager {
         const message = JSON.parse(event.data);
         const type = message.data.e;
         if(this.callbacks[type]){
-            this.callbacks[type].forEach(({callback}:any)=>{
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.callbacks[type].forEach(({callback}:{ id: string; callback:any})=>{
                 if(type === "kline"){
                     const newTicker : Partial<Kline>={
                         open: message.data.open || 0,
@@ -56,7 +55,7 @@ export class SignalingManager {
                     callback(newTicker);
                 }
                 if(type === "depth"){
-                    const newDepth: Partial<Depth>={
+                    const newDepth: Partial<DepthType>={
                         bids: message.data.b || [], // need to match the same name as backend send to us,it send us .b not .bids
                         asks: message.data.a || [],
                         lastUpdateId: message.data.lastUpdateId || 0
@@ -72,7 +71,7 @@ export class SignalingManager {
       }
   }
   
-  public sendMessage(message: any) {
+  public sendMessage(message: WebSocketMessage) {
     const messageToSend = {
         ...message, id:this.id++
     }
@@ -82,9 +81,9 @@ export class SignalingManager {
     }
     this.ws.send(JSON.stringify(messageToSend));
   }
-  public async registerCallback(type: string, callback: any, id: string) {
+  public async registerCallback(type: string, callback: Callback[], id: string) {
     this.callbacks[type] = this.callbacks[type] || [];
-    this.callbacks[type].push({callback, id});
+    this.callbacks[type].push({id, callback});
   }
   public async deRegisterCallback(type: string, id: string) {
     if(this.callbacks[type]){

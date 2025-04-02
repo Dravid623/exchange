@@ -9,7 +9,7 @@ async function main() {
   await redisClient.connect();
   console.log("✅ Redis connected");
 
-  // Ensure tables exist before processing messages
+
   await setupDatabase();
 
 

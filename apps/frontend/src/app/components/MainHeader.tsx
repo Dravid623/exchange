@@ -7,7 +7,7 @@ import { FaRupeeSign } from "react-icons/fa";
 
 export function MainHeader() {
   return (
-    <header className="w-full shadow-md top-0">
+    <header className="w-full shadow-md sticky top-0 z-50 bg-white/30 backdrop-blur-sm">
       <div className="container flex items-center justify-between ">
         <Link href="/" className="flex items-center gap-2">
           <FaRupeeSign width={40} height={40} />
@@ -16,7 +16,7 @@ export function MainHeader() {
           </span>
         </Link>
 
-        <div className="flex-1 max-w-md">
+        <div className="flex-1 max-w-md md:visible invisible">
           <Input type="text" placeholder="Search..." label={""} />
         </div>
 

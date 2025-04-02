@@ -6,21 +6,23 @@ import { BidTable } from "./depth/BidTable";
 import { AskTable } from "./depth/Asktable";
 import { SignalingManager } from "../utils/signalingManager";
 import { Card } from "../ui/Card";
+import { TodaysChange } from "./MarketBar";
+import { DepthType } from "../utils/types";
 
 export function Depth({ market }: { market: string }) {
   const [bids, setBids] = useState<[string, string][]>([]);
   const [asks, setAsks] = useState<[string, string][]>([]);
-  const [price, setPrice] = useState<string>();
-  const exchangeAPI = new ExchangeAPI();
 
-  // Refs for real-time state
+
   const bidsRef = useRef<[string, string][]>([]);
   const asksRef = useRef<[string, string][]>([]);
+  const [price,setPrice] = useState<TodaysChange | null>(null);
 
   useEffect(() => {
     const instance = SignalingManager.getInstance();
-
-    instance.registerCallback(`depth`, (data: any) => {
+    const exchangeAPI = new ExchangeAPI();
+//@ts-expect-error : type not compatible with callback interface
+    instance.registerCallback(`depth`, (data:DepthType) => {
 
       const updatedBids = [...bidsRef.current];
       data.bids.forEach(([price, size]: [string, string]) => {
@@ -55,6 +57,22 @@ export function Depth({ market }: { market: string }) {
       setAsks([...updatedAsks]);
     }, `DEPTH-${market}`);
 
+    //TODO: we need to convert this in recoil
+    instance.registerCallback(
+      "todaysChange",
+      //@ts-expect-error : type not compatible with callback interface
+      (data: Partial<TodaysChange>) => {
+        setPrice((prev) => ({
+          lastDayPrice: data?.lastDayPrice ?? prev?.lastDayPrice ?? 0,
+          price: data?.price ?? prev?.price ?? 0,
+          low: data?.low ?? prev?.low ?? 0,
+          high: data?.high ?? prev?.high ?? 0,
+          volume: data?.volume ?? prev?.volume ?? 0,
+        }));
+      },
+      `todaysChange@${market}`
+    );
+
     instance.sendMessage({
       method: "SUBSCRIBE",
       params: [`depth@${market}`],
@@ -68,9 +86,6 @@ export function Depth({ market }: { market: string }) {
       asksRef.current = d.asks;
     });
 
-    exchangeAPI.getTicker(market).then((t) => setPrice(t.lastPrice));
-    exchangeAPI.getTrades(market).then((t) => setPrice(t[0].price));
-
     return () => {
       instance.sendMessage({
         method: "UNSUBSCRIBE",
@@ -81,10 +96,10 @@ export function Depth({ market }: { market: string }) {
   }, [market]);
 
   return (
-    <Card><div>
+    <Card><div className="max-h-[520px] rounded-lg overflow-y-auto">
     <TableHeader />
       {asks.length > 0 && <AskTable asks={asks} />}
-      {price !== null && price !== undefined && <div>{price}</div>}
+      {price?.price !== null && price?.price !== undefined && <div className="text-2xl font-semibold justify-self-center">{price.price}</div>}
       {bids.length > 0 && <BidTable bids={bids} />}
   </div></Card>
     

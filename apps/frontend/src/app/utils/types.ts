@@ -1,3 +1,5 @@
+import { TodaysChange } from "../components/MarketBar";
+
 export interface Kline {
   symbol?: string; 
   open?: string;
@@ -7,8 +9,20 @@ export interface Kline {
   volume?: string;
   quoteVolume?: string;
   startTime: string; 
-  endTime: string; 
-  id: number;
+  endTime?: string; 
+  id?: number;
+}
+export interface KlineForChart {
+  symbol?: string; 
+  open?: number;
+  close?: number; 
+  high?: number; 
+  low?: number;
+  volume?: number;
+  quoteVolume?: number;
+  startTime: number; 
+  endTime?: number; 
+  id?: number;
 }
 
 export interface Trade {
@@ -20,7 +34,7 @@ export interface Trade {
   timestamp: number;
 }
 
-export interface Depth {
+export interface DepthType {
   bids: [string, string][];
   asks: [string, string][];
   lastUpdateId: string;
@@ -38,3 +52,16 @@ export interface Ticker {
   trades: string;
   volume: string;
 }
+
+export interface Callback {
+
+  callback: (...args: (Partial<Kline> | Partial<DepthType> | DepthType | Partial<TodaysChange>)[]) => void;
+
+}
+
+export interface WebSocketMessage {
+  method: string;
+  params: string[];
+  id?: number;
+}
+

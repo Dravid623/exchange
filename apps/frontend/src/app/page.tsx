@@ -4,8 +4,7 @@ import { Market } from "./Market";
 
 export default function Home() {
   return (
-    // <div className="bg-primary text-primary-foreground h-dvh">
-    <div>
+    <div className="sticky top-0 p-4">
       <Market></Market>
     </div>
   );

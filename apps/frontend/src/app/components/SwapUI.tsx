@@ -11,12 +11,13 @@ export function SwapUI({ market }: { market: string }) {
   const [quantity, setQuantity] = useState("");
   const [activeTab, setActiveTab] = useState<"buy" | "sell">("buy");
   const [type, setType] = useState<"limit" | "market">("limit");
-  const [balance,setBalance] = useState(0);
-  const [marketPrice, setMarketPrice]=useState(0)
+  // const [balance,setBalance] = useState(0);
+  // const [marketPrice, setMarketPrice]=useState(0)
 
   const handleSubmit = async () => {
     try {
-      await exchange.postOrder(market, price, quantity, activeTab, "1");
+      const response =await exchange.postOrder(market, price, quantity, activeTab, "1");
+      alert(`Order placed successfully! Order ID: ${response}`);
     } catch (error) {
       console.error("Failed to place order:", error);
     }
@@ -26,7 +27,7 @@ export function SwapUI({ market }: { market: string }) {
     <Card>
       <div>
         {/* Buy/Sell Buttons */}
-        <div className="flex h-[60px]">
+        <div className="flex h-[60px] border-b-2">
           <TabButton label="Buy" activeTab={activeTab} setActiveTab={setActiveTab} />
           <TabButton label="Sell" activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
@@ -41,7 +42,7 @@ export function SwapUI({ market }: { market: string }) {
           <div className="flex justify-between text-xs">
             <span className="text-baseTextMedEmphasis">Available Balance</span>
             <span className="font-medium text-baseTextHighEmphasis">
-              36.94 INR
+              10000 INR
             </span>
           </div>
 
@@ -88,19 +89,17 @@ function TabButton({
 
   return (
     <div
-      className={`flex-1 cursor-pointer justify-center border-b-2 p-4 ${
+      className={`flex-1 cursor-pointer justify-center p-4 ${
         isActive
           ? label === "Buy"
-            ? "border-b-greenBorder bg-greenBackgroundTransparent"
-            : "border-b-redBorder bg-redBackgroundTransparent"
-          : "border-b-baseBorderMed hover:border-b-baseBorderFocus"
+            ? "bg-green-600 rounded-lg"
+            : "bg-red-600 rounded-lg"
+          : "bg-transparent"
       }`}
       onClick={() => setActiveTab(label.toLowerCase() as "buy" | "sell")}
     >
       <p
-        className={`text-center text-sm font-semibold ${
-          label === "Buy" ? "text-greenText" : "text-redText"
-        }`}
+        className={`text-center text-sm font-semibold`}
       >
         {label}
       </p>
@@ -128,7 +127,7 @@ function OrderTypeButton({
       }`}
       onClick={() => setType(label.toLowerCase() as "limit" | "market")}
     >
-      <div className="text-x font-medium py-1 border-b-2">
+      <div className="text-x font-medium py-1 ">
         {label}
       </div>
     </div>

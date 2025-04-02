@@ -1,17 +1,19 @@
-import { time } from "console";
+
 import {
   CandlestickSeries,
   ColorType,
   createChart as createLightWeightChart,
   CrosshairMode,
+  IChartApi,
   ISeriesApi,
   UTCTimestamp,
 } from "lightweight-charts";
+import { KlineForChart } from "./types";
 
 export class ChartManager {
   private candleSeries: ISeriesApi<"Candlestick">;
   private lastUpdateTime: number = 0;
-  private chart: any;
+  private chart: IChartApi | null = null;
   private currentBar: {
     open: number | null;
     high: number | null;
@@ -25,8 +27,9 @@ export class ChartManager {
   };
 
   constructor(
-    ref: any,
-    initialData: any[],
+
+    ref: HTMLDivElement | string,
+    initialData:KlineForChart[],
     layout: { background: string; color: string },
   ) {
     const chart = createLightWeightChart(ref, {
@@ -70,27 +73,28 @@ export class ChartManager {
     });
     this.candleSeries.setData(
       initialData
-        .filter((data) => data.time) // Ensure 'start' is defined
+        .filter((data) => data.startTime) // it should be startTime. kline type.
         .map((data) => ({
           ...data,
-          time: Math.floor(Number(data.time) / 1000) as UTCTimestamp, // Convert 'start' to number (seconds)
-          open: data.open, // Convert other fields to number if needed
+          time: Math.floor(data.startTime / 1000) as UTCTimestamp,
+          open: data.open,
           high: data.high,
           low: data.low,
           close: data.close,
         }))
-        .sort((a, b) => a.time - b.time) // Sort by ascending time
+        .sort((a, b) => a.time - b.time)
     );
     this.chart.timeScale().fitContent();
   }
-  public update(updatedPrice: any) {
+
+  public update(updatedPrice:KlineForChart) {
     // if (!this.lastUpdateTime) {
     //   this.lastUpdateTime = new Date().getTime();
     // }
 
     this.candleSeries.update({
       // time: (this.lastUpdateTime / 1000) as UTCTimestamp,
-      time: updatedPrice.time,
+      time: Math.floor(updatedPrice.startTime / 1000) as UTCTimestamp,
       close: updatedPrice.close,
       low: updatedPrice.low,
       high: updatedPrice.high,
@@ -102,6 +106,6 @@ export class ChartManager {
     // }
   }
   public destroy() {
-    this.chart.remove();
+    this.chart?.remove();
   }
 }

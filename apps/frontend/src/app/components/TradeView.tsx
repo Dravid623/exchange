@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Kline } from "../utils/types";
+import { useEffect, useRef} from "react";
+import { Kline, KlineForChart } from "../utils/types";
 import { ExchangeAPI } from "../utils/exchangeApi";
 import { ChartManager } from "../utils/chartManager";
 import { SignalingManager } from "../utils/signalingManager";
-import { Card } from "../ui/Card";
 
 export function TradeView({ market }: { market: string }) {
-  const [klineData, setKlineData] = useState<Kline[]>([]);
-  const klineDataRef = useRef<Kline[]>([]);
+  // const [klineData, setKlineData] = useState<KlineForChart[]>([]);  
+  const klineDataRef = useRef<KlineForChart[]>([]);
   const chartRef = useRef<HTMLDivElement>(null);
   const chartManagerRef = useRef<ChartManager | null>(null);
   const wsRef = useRef<SignalingManager | null>(null);
@@ -17,7 +16,7 @@ export function TradeView({ market }: { market: string }) {
   useEffect(() => {
     async function init() {
       try {
-        const rawData = await new ExchangeAPI().getKlines(
+        const rawData:Kline[] = await new ExchangeAPI().getKlines(
           market,
           "1h",
           Math.floor((Date.now() - 1000 * 60 * 60 * 24 * 7) / 1000), // 7 days ago (seconds)
@@ -25,32 +24,29 @@ export function TradeView({ market }: { market: string }) {
         );
         
         // Convert and clean the data
-        const formattedData = rawData
+        const formattedData: KlineForChart[] = rawData
           .map((x) => ({
-            open: parseFloat(x.open),
-            high: parseFloat(x.high),
-            low: parseFloat(x.low),
-            close: parseFloat(x.close),
-            time: Number(x.starttime) // Convert ms to seconds
+            open: parseFloat(x.open ?? "0"),
+            high: parseFloat(x.high ?? "0"),
+            low: parseFloat(x.low ?? "0"),
+            close: parseFloat(x.close ?? "0"),
+            //@ts-expect-error : time filed need in chart but kline have startTime. i changed line 52 todo so i need to change this too
+            startTime: Number(x.starttime)
           }))
-          .sort((a, b) => a.time - b.time); // Sort by time
+          .sort((a, b) => a.startTime - b.startTime);
         
-        // Remove duplicates (if any)
-        const uniqueData = formattedData.filter(
-          (item, index, self) => index === self.findIndex((t) => t.time === item.time)
-        );
+        const uniqueData:KlineForChart[] = formattedData;
         
-        // Save the data
-        //@ts-ignore
+
         klineDataRef.current = uniqueData;
-        setKlineData(uniqueData);
+        // setKlineData(uniqueData);
         
         if (chartRef.current) {
           chartManagerRef.current?.destroy();
         
           const chartManager = new ChartManager(
             chartRef.current,
-            uniqueData,
+            uniqueData, // TODO: may cause some problem. i changed it from uniqueData to kineData. kline do not have property like time.
             {
               background: "#0e0f14",
               color: "white",
@@ -69,7 +65,8 @@ export function TradeView({ market }: { market: string }) {
     wsRef.current = SignalingManager.getInstance();
     wsRef.current.registerCallback(
       `kline`,
-      (data: any) => {
+      //@ts-expect-error : type not compatible with callback interface
+      (data: Kline) => {
         const updatedKline = [...klineDataRef.current];
         const existingIndex = updatedKline.findIndex(
           (kline) => Number(kline.startTime) === Number(data.startTime)
@@ -78,36 +75,40 @@ export function TradeView({ market }: { market: string }) {
         if (existingIndex !== -1) {
           updatedKline[existingIndex] = {
             ...updatedKline[existingIndex],
-            high: Math.max(Number(updatedKline[existingIndex].high), Number(data.high)).toString(),
-            low: Math.min(Number(updatedKline[existingIndex].low), Number(data.low)).toString(),
-            close: data.close,
+            high: Math.max(Number(updatedKline[existingIndex].high), Number(data.high)),
+            low: Math.min(Number(updatedKline[existingIndex].low), Number(data.low)),
+            close: Number(data.close),
           };
         } else {
-          updatedKline.push(data);
+          updatedKline.push({
+            open: data.open ? parseFloat(data.open) : 0,
+            high: data.high ? parseFloat(data.high) : 0,
+            low: data.low ? parseFloat(data.low) : 0,
+            close: data.close ?  parseFloat(data.close) : 0,
+            startTime: Number(data.startTime),
+          });
         }
 
-        // updatedKline.sort((a, b) => Number(a.startTime) - Number(b.startTime));
-
         klineDataRef.current = updatedKline;
-        setKlineData(updatedKline);
+        // setKlineData(updatedKline);
 
         if (existingIndex !== -1) {
           // ✅ Directly update the last candle — no need to map all data
           chartManagerRef.current?.update({
-            open: updatedKline[existingIndex].open ? parseFloat(updatedKline[existingIndex].open) : undefined,
-            high: updatedKline[existingIndex].high ? parseFloat(updatedKline[existingIndex].high) : undefined,
-            low: updatedKline[existingIndex].low? parseFloat(updatedKline[existingIndex].low) : undefined,
-            close: updatedKline[existingIndex].close ? parseFloat(updatedKline[existingIndex].close) : undefined,
-            time: Math.floor(Number(updatedKline[existingIndex].startTime) / 1000),
+            open: updatedKline[existingIndex].open ? Number(updatedKline[existingIndex].open) : undefined,
+            high: updatedKline[existingIndex].high ? Number(updatedKline[existingIndex].high) : undefined,
+            low: updatedKline[existingIndex].low? Number(updatedKline[existingIndex].low) : undefined,
+            close: updatedKline[existingIndex].close ? Number(updatedKline[existingIndex].close) : undefined,
+            startTime: Number(updatedKline[existingIndex].startTime),
           });
         } else {
           // ✅ If it's a new candle, insert it directly
           chartManagerRef.current?.update({
-            open: parseFloat(data.open),
-            high: parseFloat(data.high),
-            low: parseFloat(data.low),
-            close: parseFloat(data.close),
-            time: Math.floor(Number(data.startTime) / 1000),
+            open: data.open ? parseFloat(data.open) : 0,
+            high: data.high ? parseFloat(data.high) : 0,
+            low: data.low ? parseFloat(data.low) : 0,
+            close: data.close ?  parseFloat(data.close) : 0,
+            startTime: Number(data.startTime),
           });
         }
       },
@@ -128,9 +129,10 @@ export function TradeView({ market }: { market: string }) {
       });
       wsRef.current?.deRegisterCallback(`kline`, `kline${market}`);
     };
-  }, [market]);
+
+  }, [market]);// Dependency array should only include market. klineData have taken care
 
   return (
-        <div ref={chartRef} style={{ height: 520, width: "100%" }} />
+        <div ref={chartRef} className="h-[400px] w-full md:h-[520px]" />
   )
 }

@@ -2,6 +2,11 @@ services:
   timescaledb:
     image: timescale/timescaledb:latest-pg12
     container_name: timescaledb
+    deploy:
+      resources:
+        limits:
+          cpus: "0.05"
+          memory: "75M"
     restart: always
     ports:
       - "5432:5432"
@@ -21,6 +26,11 @@ services:
   redis:
     image: redis:latest
     container_name: redis
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"  
+          memory: "25M"
     restart: always
     ports:
       - "6379:6379"
@@ -35,6 +45,11 @@ services:
       context: .
       dockerfile: ./apps/db/Dockerfile
     container_name: db
+    deploy:
+      resources:
+        limits:
+          cpus: "0.05" 
+          memory: "75M"
     volumes:
       - ./apps/db:/app
       - /app/node_modules
@@ -60,6 +75,11 @@ services:
       context: .
       dockerfile: ./apps/api/Dockerfile
     container_name: api
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1" 
+          memory: "100M"
     ports:
       - "3005:3000"
     volumes:
@@ -87,6 +107,11 @@ services:
       context: .
       dockerfile: ./apps/ws/Dockerfile
     container_name: ws
+    deploy:
+      resources:
+        limits:
+          cpus: "0.05"  
+          memory: "100M"
     ports:
       - "3001:3001"
     volumes:
@@ -106,6 +131,11 @@ services:
       context: .
       dockerfile: ./apps/engine/Dockerfile
     container_name: engine
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "75M"
     volumes:
       - ./apps/engine:/app
       - /app/node_modules
