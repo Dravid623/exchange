@@ -10,13 +10,13 @@ export const AskTable = ({ asks }: { asks: [string, string][] }) => {
     ],
   );
   const maxTotal = relevantAsks.reduce(
-    (acc, [_, quantity]) => acc + Number(quantity),
+    (acc, [, quantity]) => acc + Number(quantity),
     0,
   );
 const asksWithTotal = asksWithTotalWithoutReverse.sort((a, b) => Number(b[0]) - Number(a[0]))
   return (
     <div>
-      {asksWithTotal?.filter(([_, quantity]) => parseFloat(quantity) > 0)
+      {asksWithTotal?.filter(([, quantity]) => parseFloat(quantity) > 0)
       ?.map(([price, quantity, total]) => (
         <Ask
           maxTotal={maxTotal}
@@ -44,11 +44,14 @@ function Ask({
     <div className="relative flex w-full bg-transparent overflow-hidden py-1 px-2 mb-1">
       {/* Background Bar (Animating from right to left) */}
       <div
-        className="absolute top-0 right-0 h-full bg-red-500/30 transition-all duration-300 ease-in-out rounded-md"
+        className="absolute top-0 right-0 h-full bg-red-300 transition-all duration-300 ease-in-out rounded-md"
         style={{ width: `${(100 * total) / maxTotal}%` }}
+      >
+        <div
+        className="absolute top-0 right-0 h-full bg-red-500 transition-all duration-300 ease-in-out rounded-md"
+        style={{ width: `${(100 * Number(quantity)) / maxTotal}%` }}
       ></div>
-  
-      {/* Order Details */}
+      </div>
       <div className="flex justify-between w-full text-xs font-medium relative z-10">
         <div className="w-1/3 text-left text-red-500">{price}</div>
         <div className="w-1/3 text-center">{quantity}</div>
