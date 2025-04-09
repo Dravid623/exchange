@@ -30,7 +30,9 @@ export class RedisManager {
       this.publisher.lPush(
         "message",
         JSON.stringify({ clientId: id, message }),
-      );
+      ).then(()=>{
+        this.publisher.publish("messageToEngine","start")
+      });
     });
   }
   public getRandomClientId() {
